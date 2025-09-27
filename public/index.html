@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID & Ticket Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .form-section h2 {
+            color: #555;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .search-btn {
+            background-color: #28a745;
+        }
+        .search-btn:hover {
+            background-color: #218838;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .response.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .response.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .response div {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .response strong {
+            color: #333;
+        }
+        .qr-code-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .qr-code-card.used {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .qr-code-card.available {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        .qr-code-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-used {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        /* QR Management Styles */
+        .qr-management-container {
+            margin-top: 20px;
+        }
+        .ticket-management-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+        }
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .ticket-info h3 {
+            margin: 0;
+            color: #333;
+        }
+        .ticket-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .select-all-checkbox {
+            margin-right: 10px;
+        }
+        .qr-management-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .qr-checkbox {
+            margin-right: 15px;
+        }
+        .qr-details {
+            flex-grow: 1;
+        }
+        .qr-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .bulk-actions {
+            margin: 15px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* Global Controls Styles */
+        .global-controls {
+            background: #f8f9fa !important;
+            border: 2px solid #007bff !important;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+        }
+        
+        .global-select-all {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .global-select-all input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+        
+        .global-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Responsive Design for Mobile Devices */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 10px;
+            }
+            
+            /* Global Controls Mobile */
+            .global-controls > div {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .global-actions {
+                margin-left: 0 !important;
+                margin-top: 10px;
+                justify-content: center;
+            }
+            
+            /* Ticket Header Mobile */
+            .ticket-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .ticket-info {
+                text-align: center;
+            }
+            
+            .ticket-info h3 {
+                font-size: 16px;
+                word-break: break-all;
+            }
+            
+            .ticket-info div {
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            
+            .ticket-controls {
+                justify-content: center;
+            }
+            
+            /* QR Management Item Mobile */
+            .qr-management-item {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 15px 10px;
+                gap: 10px;
+            }
+            
+            .qr-checkbox {
+                margin: 0 0 10px 0;
+                align-self: center;
+                transform: scale(1.2);
+            }
+            
+            .qr-details {
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            
+            .qr-details > div {
+                margin: 8px 0;
+                padding: 5px;
+                background: #f8f9fa;
+                border-radius: 3px;
+                font-size: 12px;
+            }
+            
+            .qr-details code {
+                word-break: break-all;
+                font-size: 10px !important;
+            }
+            
+            .qr-actions {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            /* Bulk Actions Mobile */
+            .bulk-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .bulk-actions span {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+            
+            /* Action Buttons Mobile */
+            .action-btn {
+                font-size: 11px;
+                padding: 8px 12px;
+                white-space: nowrap;
+                min-width: 120px;
+            }
+            
+            /* Status Badges Mobile */
+            .status-badge {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 5px;
+                margin: 5px;
+            }
+            
+            .ticket-management-card {
+                padding: 10px;
+                margin: 5px 0;
+            }
+            
+            .ticket-info h3 {
+                font-size: 14px;
+            }
+            
+            .ticket-info div {
+                font-size: 11px;
+            }
+            
+            .qr-details > div {
+                font-size: 11px;
+            }
+            
+            .qr-details code {
+                font-size: 9px !important;
+            }
+            
+            .action-btn {
+                font-size: 10px;
+                padding: 6px 10px;
+                min-width: 100px;
+            }
+            
+            .global-actions .action-btn {
+                width: 100%;
+                margin: 2px 0;
+            }
+            
+            /* Form Sections Mobile */
+            .form-section {
+                padding: 10px;
+                margin: 10px 0;
+            }
+            
+            .form-section h2 {
+                font-size: 18px;
+                text-align: center;
+            }
+            
+            .input-group {
+                margin: 15px 0;
+            }
+            
+            .input-group label {
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+            
+            .input-group input {
+                font-size: 14px;
+                padding: 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            button {
+                font-size: 14px;
+                padding: 12px 20px;
+                width: 100%;
+                margin: 5px 0;
+            }
+            
+            .search-btn {
+                background-color: #28a745;
+                margin-bottom: 15px;
+            }
+            
+            /* Response sections mobile */
+            .response {
+                margin: 10px 0;
+                padding: 10px;
+                font-size: 12px;
+            }
+            
+            .response.success {
+                padding: 15px 10px;
+            }
+            
+            /* Make text selectable and copyable on mobile */
+            .qr-details code {
+                user-select: all;
+                -webkit-user-select: all;
+                -moz-user-select: all;
+                cursor: pointer;
+                background: #f1f1f1;
+                padding: 2px 4px;
+                border-radius: 2px;
+            }
+            
+            .qr-details strong {
+                display: inline-block;
+                min-width: 80px;
+                font-size: 11px;
+            }
+        }
+        
+        /* Touch-friendly improvements for all devices */
+        @media (hover: none) and (pointer: coarse) {
+            /* This targets touch devices */
+            button, .action-btn {
+                min-height: 44px; /* Apple's recommended minimum touch target */
+                padding: 12px 16px;
+            }
+            
+            input[type="checkbox"] {
+                min-height: 20px;
+                min-width: 20px;
+            }
+            
+            .qr-management-item {
+                padding: 15px;
+                margin: 10px 0;
+            }
+            
+            /* Add hover effects replacement for touch */
+            .action-btn:active {
+                transform: scale(0.95);
+                transition: transform 0.1s;
+            }
+        }
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .btn-mark-used {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-mark-unused {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-mark-used:hover {
+            background-color: #c82333;
+        }
+        .btn-mark-unused:hover {
+            background-color: #218838;
+        }
+        
+        /* QR Image Styles */
+        .qr-image {
+            max-width: 150px;
+            max-height: 150px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .qr-image:hover {
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+        
+        .qr-image-small {
+            max-width: 80px;
+            max-height: 80px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            .qr-image {
+                max-width: 120px;
+                max-height: 120px;
+            }
+            
+            .qr-image-small {
+                max-width: 60px;
+                max-height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RFID & Ticket Management System</h1>
+        
+        <!-- RFID Section -->
+        <div class="form-section">
+            <h2>🏷️ RFID Operations</h2>
+            <div class="input-group">
+                <label for="cardNo1">Card Number (Process):</label>
+                <input type="text" id="cardNo1" placeholder="Enter Card Number to process (reverse status)">
+            </div>
+            <button onclick="processRFID()">Reverse RFID Status</button>
+            
+            <div class="input-group" style="margin-top: 20px;">
+                <label for="cardNo2">Card Number (Search):</label>
+                <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
+            </div>
+            <button onclick="searchRFID()" class="search-btn">Search RFID</button>
+            
+            <div id="rfidResponse" class="response"></div>
+        </div>
+
+
+   
+
+        <!-- QR Status Management Section -->
+        <div class="form-section">
+            <h2>⚙️ QR Status Management</h2>
+            <p>Search by last 5 digits of Ticket ID or Payment ID to manage today's QR codes</p>
+            
+            <div class="input-group">
+                <label for="searchDigits">Last 5 Digits:</label>
+                <input type="text" id="searchDigits" placeholder="Enter last 5 digits">
+            </div>
+            
+            <button onclick="searchByDigits()" class="search-btn">Search QR Codes</button>
+            
+            <div id="qrManagementResults" class="response"></div>
+        </div>
+
+
+
+        <!-- Payment Section -->
+        <div class="form-section">
+            <h2>💳 Payment Operations</h2>
+            <div class="input-group">
+                <label for="ticketIdPayment">Ticket ID:</label>
+                <input type="text" id="ticketIdPayment" placeholder="Enter Ticket ID for payment update">
+            </div>
+            <div class="input-group">
+                <label for="paymentId1">Payment ID:</label>
+                <input type="text" id="paymentId1" placeholder="Enter Payment ID to set">
+            </div>
+            <button onclick="updatePayment()">Update Payment (Set to COMPLETED)</button>
+            
+            <div id="paymentResponse" class="response"></div>
+        </div>
+
+
+             <!-- QR Codes Section -->
+        <div class="form-section">
+            <h2>🔍 QR Code Details</h2>
+            
+            <!-- Search Options -->
+            <div class="input-group">
+                <label for="searchType">Search By:</label>
+                <select id="searchType" onchange="updatePlaceholder()">
+                    <option value="ticket">Ticket ID</option>
+                    <option value="payment">Payment ID</option>
+                    <option value="phone">Phone Number</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="searchInput">Search Value:</label>
+                <input type="text" id="searchInput" placeholder="Enter Ticket ID to view QR codes">
+            </div>
+            
+            <button onclick="searchQRCodes()" class="search-btn">Search QR Codes</button>
+            
+            <div id="qrResponse" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        // RFID Functions
+        async function processRFID() {
+            const card_no = document.getElementById('cardNo1').value.trim();
+            if (!card_no) {
+                showResponse('rfidResponse', 'Please enter Card Number', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/rfid/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ card_no })
+                });
+
+                const data = await response.json();
+                showResponse('rfidResponse', data, response.ok);
+            } catch (error) {
+                showResponse('rfidResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        async function searchRFID() {
+            const card_no = document.getElementById('cardNo2').value.trim();
+            if (!card_no) {
+                showResponse('rfidResponse', 'Please enter Card Number', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/rfid/search/${card_no}`);
+                const data = await response.json();
+                showResponse('rfidResponse', data, response.ok);
+            } catch (error) {
+                showResponse('rfidResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        async function createRFID() {
+            const card_no = document.getElementById('cardNo1').value.trim();
+            if (!card_no) {
+                showResponse('rfidResponse', 'Please enter Card Number', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/rfid/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ card_no })
+                });
+
+                const data = await response.json();
+                showResponse('rfidResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('rfidResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        // Ticket Functions
+        async function processTicket() {
+            const ticketId = document.getElementById('ticketId1').value.trim();
+            if (!ticketId) {
+                showResponse('ticketResponse', 'Please enter Ticket ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ticket/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ticketId })
+                });
+
+                const data = await response.json();
+                showResponse('ticketResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('ticketResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        async function searchTicket() {
+            const ticketId = document.getElementById('ticketId2').value.trim();
+            if (!ticketId) {
+                showResponse('ticketResponse', 'Please enter Ticket ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ticket/search/${ticketId}`);
+                const data = await response.json();
+                showResponse('ticketResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('ticketResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        async function validateTicket() {
+            const ticketId = document.getElementById('ticketId1').value.trim();
+            if (!ticketId) {
+                showResponse('ticketResponse', 'Please enter Ticket ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ticket/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ticketId })
+                });
+
+                const data = await response.json();
+                showResponse('ticketResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('ticketResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        async function createTicket() {
+            const ticketId = document.getElementById('ticketId1').value.trim();
+            if (!ticketId) {
+                showResponse('ticketResponse', 'Please enter Ticket ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ticket/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        ticketId,
+                        price: 100,
+                        type: 'standard'
+                    })
+                });
+
+                const data = await response.json();
+                showResponse('ticketResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('ticketResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        // Payment Functions
+        async function updatePayment() {
+            const ticketId = document.getElementById('ticketIdPayment').value.trim();
+            const paymentId = document.getElementById('paymentId1').value.trim();
+            
+            if (!ticketId || !paymentId) {
+                showResponse('paymentResponse', 'Please enter both Ticket ID and Payment ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/ticket/update-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        ticketId,
+                        paymentId
+                    })
+                });
+
+                const data = await response.json();
+                showResponse('paymentResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('paymentResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        // QR Codes Functions
+        async function getQRCodes() {
+            const ticketId = document.getElementById('ticketIdQR').value.trim();
+            if (!ticketId) {
+                showResponse('ticketResponse', 'Please enter Ticket ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ticket/qrcodes/${ticketId}`);
+                const data = await response.json();
+                showResponse('ticketResponse', JSON.stringify(data, null, 2), response.ok);
+            } catch (error) {
+                showResponse('ticketResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        // QR Code Functions
+        function updatePlaceholder() {
+            const searchType = document.getElementById('searchType').value;
+            const searchInput = document.getElementById('searchInput');
+            
+            switch(searchType) {
+                case 'ticket':
+                    searchInput.placeholder = 'Enter Ticket ID (e.g., TKT1757165715750250)';
+                    break;
+                case 'payment':
+                    searchInput.placeholder = 'Enter Payment ID (e.g., PAY123456)';
+                    break;
+                case 'phone':
+                    searchInput.placeholder = 'Enter Phone Number (e.g., 9876543210)';
+                    break;
+            }
+        }
+
+        async function searchQRCodes() {
+            const searchType = document.getElementById('searchType').value;
+            const searchValue = document.getElementById('searchInput').value.trim();
+            
+            if (!searchValue) {
+                showResponse('qrResponse', 'Please enter a search value', false);
+                return;
+            }
+
+            try {
+                let endpoint;
+                switch(searchType) {
+                    case 'ticket':
+                        endpoint = `/api/ticket/qrcodes/${searchValue}?type=ticket`;
+                        break;
+                    case 'payment':
+                        endpoint = `/api/ticket/payment/${searchValue}`;
+                        break;
+                    case 'phone':
+                        endpoint = `/api/ticket/phone/${searchValue}`;
+                        break;
+                }
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                showResponse('qrResponse', data, response.ok);
+            } catch (error) {
+                showResponse('qrResponse', 'Error: ' + error.message, false);
+            }
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }
+
+        function formatResponse(data) {
+            if (typeof data === 'string') {
+                return data;
+            }
+
+            let formatted = '';
+            
+            if (data.success !== undefined) {
+                formatted += `<div style="margin-bottom: 15px;">
+                    <strong>Status:</strong> <span style="color: ${data.success ? '#28a745' : '#dc3545'};">
+                        ${data.success ? '✅ SUCCESS' : '❌ FAILED'}
+                    </span>
+                </div>`;
+            }
+
+            if (data.message) {
+                formatted += `<div style="margin-bottom: 15px;"><strong>Message:</strong> ${data.message}</div>`;
+            }
+
+            if (data.error) {
+                formatted += `<div style="margin-bottom: 15px;"><strong>Error:</strong> ${data.error}</div>`;
+            }
+
+            if (data.data) {
+                // Handle RFID card details
+                if (data.data.card_no || data.data.rfid) {
+                    formatted += '<div style="margin-bottom: 15px;"><strong>Card Details:</strong></div>';
+                    formatted += '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">';
+                    
+                    if (data.data.card_no) {
+                        formatted += `<div><strong>Card Number:</strong> ${data.data.card_no}</div>`;
+                    }
+                    
+                    if (data.data.rfid) {
+                        formatted += `<div><strong>RFID:</strong> ${data.data.rfid}</div>`;
+                    }
+                    
+                    if (data.data.is_scan !== undefined) {
+                        const scanStatus = data.data.is_scan ? 'SCANNED ✅' : 'NOT SCANNED ❌';
+                        const statusColor = data.data.is_scan ? '#28a745' : '#ffc107';
+                        formatted += `<div><strong>Scan Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${scanStatus}</span></div>`;
+                    }
+                    
+                    if (data.data.time) {
+                        formatted += `<div><strong>Last Scan Time:</strong> ${formatTimestamp(data.data.time)}</div>`;
+                    }
+                    
+                    if (data.data.date_modified) {
+                        formatted += `<div><strong>Last Modified:</strong> ${formatTimestamp(data.data.date_modified)}</div>`;
+                    }
+                    
+                    formatted += '</div>';
+                }
+
+                // Handle QR Codes data (from ticket endpoints)
+                if (data.data.qrCodes && Array.isArray(data.data.qrCodes)) {
+                    formatted += `<div style="margin-bottom: 15px;"><strong>QR Codes (${data.data.totalQRCodes || data.data.qrCodes.length}):</strong></div>`;
+                    
+                    data.data.qrCodes.forEach((qr, index) => {
+                        formatted += `<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid ${qr.isUsed ? '#dc3545' : '#28a745'};">`;
+                        formatted += `<h4 style="margin: 0 0 10px 0; color: #333;">QR Code #${index + 1}</h4>`;
+                        
+                        if (qr.qrCode) {
+                            formatted += `<div><strong>QR Code:</strong> <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">${qr.qrCode}</code></div>`;
+                        }
+                        
+                        const usageStatus = qr.isUsed ? 'USED ❌' : 'AVAILABLE ✅';
+                        const statusColor = qr.isUsed ? '#dc3545' : '#28a745';
+                        formatted += `<div><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${usageStatus}</span></div>`;
+                        
+                        if (qr.validDate) {
+                            formatted += `<div><strong>Valid Date:</strong> ${formatTimestamp(qr.validDate)}</div>`;
+                        }
+                        
+                        if (qr.createdAt) {
+                            formatted += `<div><strong>Created At:</strong> ${formatTimestamp(qr.createdAt)}</div>`;
+                        }
+                        
+                        if (qr.usedAt) {
+                            formatted += `<div><strong>Used At:</strong> ${formatTimestamp(qr.usedAt)}</div>`;
+                        }
+                        
+                        if (qr.scannedBy) {
+                            formatted += `<div><strong>Scanned By:</strong> ${qr.scannedBy}</div>`;
+                        }
+                        
+                        if (qr.scannedByAdmin) {
+                            formatted += `<div><strong>Scanned By Admin:</strong> ${qr.scannedByAdmin}</div>`;
+                        }
+                        
+                        formatted += '</div>';
+                    });
+                }
+
+                // Handle ticket data
+                if (data.data.ticket) {
+                    formatted += '<div style="margin-bottom: 15px;"><strong>Ticket Information:</strong></div>';
+                    formatted += '<div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 10px 0;">';
+                    
+                    const ticket = data.data.ticket;
+                    if (ticket.ticketId) {
+                        formatted += `<div><strong>Ticket ID:</strong> ${ticket.ticketId}</div>`;
+                    }
+                    if (ticket.paymentStatus) {
+                        const statusColor = ticket.paymentStatus === 'COMPLETED' ? '#28a745' : '#ffc107';
+                        formatted += `<div><strong>Payment Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${ticket.paymentStatus}</span></div>`;
+                    }
+                    if (ticket.paymentId) {
+                        formatted += `<div><strong>Payment ID:</strong> ${ticket.paymentId}</div>`;
+                    }
+                    if (ticket.createdAt) {
+                        formatted += `<div><strong>Created At:</strong> ${formatTimestamp(ticket.createdAt)}</div>`;
+                    }
+                    if (ticket.updatedAt) {
+                        formatted += `<div><strong>Updated At:</strong> ${formatTimestamp(ticket.updatedAt)}</div>`;
+                    }
+                    
+                    formatted += '</div>';
+                }
+
+                // Handle other data fields
+                if (data.data.ticketId && !data.data.ticket && !data.data.qrCodes) {
+                    formatted += '<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">';
+                    if (data.data.ticketId) {
+                        formatted += `<div><strong>Ticket ID:</strong> ${data.data.ticketId}</div>`;
+                    }
+                    if (data.data.paymentId) {
+                        formatted += `<div><strong>Payment ID:</strong> ${data.data.paymentId}</div>`;
+                    }
+                    if (data.data.paymentStatus) {
+                        const statusColor = data.data.paymentStatus === 'COMPLETED' ? '#28a745' : '#ffc107';
+                        formatted += `<div><strong>Payment Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${data.data.paymentStatus}</span></div>`;
+                    }
+                    if (data.data.updatedAt) {
+                        formatted += `<div><strong>Updated At:</strong> ${formatTimestamp(data.data.updatedAt)}</div>`;
+                    }
+                    formatted += '</div>';
+                }
+
+                // Handle hierarchical data (payment ID and phone number searches)
+                if (data.data.tickets && Array.isArray(data.data.tickets)) {
+                    // Show user info if available (phone search)
+                    if (data.data.user) {
+                        formatted += '<div style="margin-bottom: 20px;"><strong>👤 User Information:</strong></div>';
+                        formatted += '<div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #28a745;">';
+                        formatted += `<div><strong>📱 Phone:</strong> ${data.data.user.phone}</div>`;
+                        formatted += `<div><strong>👤 Name:</strong> ${data.data.user.name}</div>`;
+                        if (data.data.user.email && data.data.user.email !== 'N/A') {
+                            formatted += `<div><strong>📧 Email:</strong> ${data.data.user.email}</div>`;
+                        }
+                        formatted += '</div>';
+                    }
+
+                    // Show payment info if available (payment search)
+                    if (data.data.paymentId) {
+                        formatted += '<div style="margin-bottom: 20px;"><strong>💳 Payment Information:</strong></div>';
+                        formatted += '<div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #ffc107;">';
+                        formatted += `<div><strong>💳 Payment ID:</strong> ${data.data.paymentId}</div>`;
+                        formatted += `<div><strong>🎫 Total Tickets:</strong> ${data.data.totalTickets}</div>`;
+                        formatted += `<div><strong>📋 Total QR Codes:</strong> ${data.data.totalQRCodes}</div>`;
+                        formatted += '</div>';
+                    }
+
+                    // Show summary
+                    formatted += '<div style="margin-bottom: 20px;"><strong>📊 Summary:</strong></div>';
+                    formatted += '<div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007bff;">';
+                    formatted += `<div><strong>🎫 Total Tickets:</strong> ${data.data.totalTickets}</div>`;
+                    formatted += `<div><strong>📋 Total QR Codes:</strong> ${data.data.totalQRCodes}</div>`;
+                    formatted += '</div>';
+
+                    // Show each ticket with its QR codes
+                    formatted += '<div style="margin-bottom: 15px;"><strong>🎫 Tickets & QR Codes:</strong></div>';
+                    
+                    data.data.tickets.forEach((ticket, ticketIndex) => {
+                        formatted += `<div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 15px 0; border: 2px solid #dee2e6;">`;
+                        formatted += `<h3 style="margin: 0 0 15px 0; color: #495057; font-size: 18px;">🎫 Ticket #${ticketIndex + 1}</h3>`;
+                        
+                        // Ticket details
+                        formatted += '<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #6c757d;">';
+                        if (ticket.ticketId) {
+                            formatted += `<div><strong>🔢 Ticket ID:</strong> ${ticket.ticketId}</div>`;
+                        }
+                        if (ticket.paymentId && ticket.paymentId !== 'N/A') {
+                            formatted += `<div><strong>💳 Payment ID:</strong> ${ticket.paymentId}</div>`;
+                        }
+                        if (ticket.paymentStatus && ticket.paymentStatus !== 'N/A') {
+                            const statusColor = ticket.paymentStatus === 'COMPLETED' ? '#28a745' : '#ffc107';
+                            formatted += `<div><strong>💰 Payment Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${ticket.paymentStatus}</span></div>`;
+                        }
+                        if (ticket.totalAmount && ticket.totalAmount !== 'N/A') {
+                            formatted += `<div><strong>💵 Total Amount:</strong> ₹${ticket.totalAmount}</div>`;
+                        }
+                        if (ticket.createdAt) {
+                            formatted += `<div><strong>📅 Created At:</strong> ${formatTimestamp(ticket.createdAt)}</div>`;
+                        }
+                        formatted += `<div><strong>📋 QR Codes Count:</strong> ${ticket.qrCodesCount}</div>`;
+                        formatted += '</div>';
+
+                        // QR Codes for this ticket
+                        if (ticket.qrCodes && ticket.qrCodes.length > 0) {
+                            formatted += `<div style="margin-top: 15px;"><strong>📋 QR Codes (${ticket.qrCodes.length}):</strong></div>`;
+                            
+                            ticket.qrCodes.forEach((qr, qrIndex) => {
+                                const borderColor = qr.isUsed ? '#dc3545' : '#28a745';
+                                const bgColor = qr.isUsed ? '#fff5f5' : '#f0fff4';
+                                
+                                formatted += `<div style="background: ${bgColor}; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid ${borderColor};">`;
+                                formatted += `<h5 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">📱 QR Code #${qrIndex + 1}</h5>`;
+                                
+                                if (qr.qrImageUrl) {
+                                    formatted += `<div style="margin: 10px 0; text-align: center;"><strong>📱 QR Code Image:</strong><br><img src="${qr.qrImageUrl}" alt="QR Code" class="qr-image" style="margin-top: 5px;" onclick="window.open('${qr.qrImageUrl}', '_blank')"></div>`;
+                                }
+                                
+                                if (qr.qrCode) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>🔗 QR Code Text:</strong> <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 12px; word-break: break-all;">${qr.qrCode}</code></div>`;
+                                }
+                                
+                                const usageStatus = qr.isUsed ? 'USED ❌' : 'AVAILABLE ✅';
+                                const statusColor = qr.isUsed ? '#dc3545' : '#28a745';
+                                formatted += `<div style="margin: 5px 0;"><strong>📊 Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${usageStatus}</span></div>`;
+                                
+                                if (qr.validDate) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>📅 Valid Date:</strong> ${formatTimestamp(qr.validDate)}</div>`;
+                                }
+                                
+                                if (qr.createdAt) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>🕐 Created At:</strong> ${formatTimestamp(qr.createdAt)}</div>`;
+                                }
+                                
+                                if (qr.usedAt) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>🕐 Used At:</strong> ${formatTimestamp(qr.usedAt)}</div>`;
+                                }
+                                
+                                if (qr.scannedBy) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>👤 Scanned By:</strong> ${qr.scannedBy}</div>`;
+                                }
+                                
+                                if (qr.scannedByAdmin) {
+                                    formatted += `<div style="margin: 5px 0;"><strong>👨‍💼 Scanned By Admin:</strong> ${qr.scannedByAdmin}</div>`;
+                                }
+                                
+                                formatted += '</div>';
+                            });
+                        } else {
+                            formatted += '<div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; color: #856404;"><em>No QR codes found for this ticket</em></div>';
+                        }
+                        
+                        formatted += '</div>'; // Close ticket container
+                    });
+                }
+            }
+
+            return formatted;
+        }
+
+        function showResponse(elementId, message, isSuccess) {
+            const responseElement = document.getElementById(elementId);
+            
+            let content;
+            try {
+                const data = typeof message === 'string' ? JSON.parse(message) : message;
+                content = formatResponse(data);
+            } catch (e) {
+                content = `<pre>${message}</pre>`;
+            }
+            
+            responseElement.innerHTML = content;
+            responseElement.className = `response ${isSuccess ? 'success' : 'error'}`;
+            responseElement.style.display = 'block';
+        }
+
+        // Clear response when typing in input fields
+        document.getElementById('cardNo1').addEventListener('input', () => {
+            document.getElementById('rfidResponse').style.display = 'none';
+        });
+        document.getElementById('cardNo2').addEventListener('input', () => {
+            document.getElementById('rfidResponse').style.display = 'none';
+        });
+        document.getElementById('ticketId1').addEventListener('input', () => {
+            document.getElementById('ticketResponse').style.display = 'none';
+        });
+        document.getElementById('ticketId2').addEventListener('input', () => {
+            document.getElementById('ticketResponse').style.display = 'none';
+        });
+        document.getElementById('ticketIdPayment').addEventListener('input', () => {
+            document.getElementById('paymentResponse').style.display = 'none';
+        });
+        document.getElementById('paymentId1').addEventListener('input', () => {
+            document.getElementById('paymentResponse').style.display = 'none';
+        });
+        document.getElementById('searchInput').addEventListener('input', () => {
+            document.getElementById('qrResponse').style.display = 'none';
+        });
+        document.getElementById('ticketIdQR').addEventListener('input', () => {
+            document.getElementById('qrResponse').style.display = 'none';
+        });
+        document.getElementById('searchDigits').addEventListener('input', () => {
+            document.getElementById('qrManagementResults').style.display = 'none';
+        });
+
+        // QR Management Functions
+        async function searchByDigits() {
+            const digits = document.getElementById('searchDigits').value.trim();
+            
+            if (!digits) {
+                showResponse('qrManagementResults', 'Please enter last 5 digits', false);
+                return;
+            }
+            
+         
+
+            try {
+                const response = await fetch(`/api/ticket/search-digits/${digits}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayQRManagement(data.data);
+                } else {
+                    showResponse('qrManagementResults', data.error || 'No results found', false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showResponse('qrManagementResults', 'An error occurred while searching', false);
+            }
+        }
+
+        function displayQRManagement(data) {
+            const container = document.getElementById('qrManagementResults');
+            
+            let html = `
+                <div class="qr-management-container">
+                    <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <strong>📊 Search Results for "${data.searchDigits}"</strong><br>
+                        📅 Date: ${data.searchDate}<br>
+                        🎫 Total Tickets: ${data.totalTickets}<br>
+                        🔳 Total QR Codes: ${data.totalQRCodes}
+                    </div>
+                    
+                    <div class="global-controls" style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 2px solid #007bff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                            <label class="global-select-all" style="font-weight: bold; font-size: 16px; color: #007bff;">
+                                <input type="checkbox" id="globalSelectAll" onchange="toggleAllQRsGlobally()"> 
+                                🌐 Select All QR Codes (${data.totalQRCodes})
+                            </label>
+                            <div class="global-actions" style="margin-left: 20px;">
+                                <span style="font-weight: bold; margin-right: 10px;">All Selected QRs:</span>
+                                <button class="action-btn btn-mark-used" onclick="updateAllSelectedQRs(true)" style="margin-right: 10px;">
+                                    Mark All as Used ❌
+                                </button>
+                                <button class="action-btn btn-mark-unused" onclick="updateAllSelectedQRs(false)">
+                                    Mark All as Available ✅
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+            `;
+
+            data.tickets.forEach(ticket => {
+                const ticketId = `ticket_${ticket.ticketId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                
+                html += `
+                    <div class="ticket-management-card">
+                        <div class="ticket-header">
+                            <div class="ticket-info">
+                                <h3>🎫 ${ticket.ticketId}</h3>
+                                <div style="font-size: 14px; color: #666;">
+                                    💳 Payment: ${ticket.paymentId} | 
+                                    📋 Type: ${ticket.ticketType} | 
+                                    💰 Amount: ${ticket.totalAmount}
+                                </div>
+                            </div>
+                            <div class="ticket-controls">
+                                <label class="select-all-checkbox">
+                                    <input type="checkbox" id="selectAll_${ticketId}" onchange="toggleAllQRs('${ticketId}')">
+                                    Select All (${ticket.qrCodesCount})
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bulk-actions">
+                            <span>Selected QRs:</span>
+                            <button class="action-btn btn-mark-used" onclick="updateSelectedQRs('${ticketId}', true)">
+                                Mark as Used ❌
+                            </button>
+                            <button class="action-btn btn-mark-unused" onclick="updateSelectedQRs('${ticketId}', false)">
+                                Mark as Available ✅
+                            </button>
+                        </div>
+                `;
+
+                ticket.qrCodes.forEach(qr => {
+                    const qrId = qr._id;
+                    const statusBadge = qr.isUsed 
+                        ? '<span class="status-badge status-used">USED ❌</span>' 
+                        : '<span class="status-badge status-available">AVAILABLE ✅</span>';
+                    
+                    html += `
+                        <div class="qr-management-item">
+                            <input type="checkbox" class="qr-checkbox qr-checkbox-${ticketId}" value="${qrId}" id="qr_${qrId}">
+                            <div class="qr-details">
+                                ${qr.qrImageUrl ? `<div style="text-align: center; margin: 10px 0;"><img src="${qr.qrImageUrl}" alt="QR Code" class="qr-image-small" onclick="window.open('${qr.qrImageUrl}', '_blank')" style="cursor: pointer;"></div>` : ''}
+                                <div><strong>🔳 QR:</strong> <code style="font-size: 11px;">${qr.qrCode}</code></div>
+                                <div><strong>📊 Status:</strong> ${statusBadge}</div>
+                                <div><strong>🕐 Created:</strong> ${formatTimestamp(qr.createdAt)}</div>
+                                ${qr.usedAt ? `<div><strong>🕐 Used:</strong> ${formatTimestamp(qr.usedAt)}</div>` : ''}
+                                ${qr.scannedBy ? `<div><strong>👤 Scanned By:</strong> ${qr.scannedBy}</div>` : ''}
+                            </div>
+                            <div class="qr-actions">
+                                <button class="action-btn ${qr.isUsed ? 'btn-mark-unused' : 'btn-mark-used'}" 
+                                        onclick="updateSingleQR('${qrId}', ${!qr.isUsed})">
+                                    ${qr.isUsed ? 'Mark Available ✅' : 'Mark Used ❌'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+            
+            container.innerHTML = html;
+            container.className = 'response success';
+            container.style.display = 'block';
+        }
+
+        function toggleAllQRs(ticketId) {
+            const selectAllCheckbox = document.getElementById(`selectAll_${ticketId}`);
+            const qrCheckboxes = document.querySelectorAll(`.qr-checkbox-${ticketId}`);
+            
+            qrCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        function getSelectedQRIds(ticketId) {
+            const selectedCheckboxes = document.querySelectorAll(`.qr-checkbox-${ticketId}:checked`);
+            return Array.from(selectedCheckboxes).map(cb => cb.value);
+        }
+
+        async function updateSelectedQRs(ticketId, isUsed) {
+            const selectedIds = getSelectedQRIds(ticketId);
+            
+            if (selectedIds.length === 0) {
+                alert('Please select at least one QR code');
+                return;
+            }
+            
+            await updateQRStatus(selectedIds, isUsed);
+        }
+
+        function toggleAllQRsGlobally() {
+            const globalSelectAll = document.getElementById('globalSelectAll');
+            const allQRCheckboxes = document.querySelectorAll('.qr-checkbox');
+            const allTicketSelectAlls = document.querySelectorAll('[id^="selectAll_"]');
+            
+            // Toggle all QR checkboxes
+            allQRCheckboxes.forEach(checkbox => {
+                checkbox.checked = globalSelectAll.checked;
+            });
+            
+            // Toggle all ticket-level select all checkboxes
+            allTicketSelectAlls.forEach(checkbox => {
+                checkbox.checked = globalSelectAll.checked;
+            });
+        }
+
+        function getAllSelectedQRIds() {
+            const selectedCheckboxes = document.querySelectorAll('.qr-checkbox:checked');
+            return Array.from(selectedCheckboxes).map(cb => cb.value);
+        }
+
+        async function updateAllSelectedQRs(isUsed) {
+            const selectedIds = getAllSelectedQRIds();
+            
+            if (selectedIds.length === 0) {
+                alert('Please select at least one QR code from any ticket');
+                return;
+            }
+            
+            const confirmMessage = `Are you sure you want to mark ${selectedIds.length} QR code(s) as ${isUsed ? 'USED' : 'AVAILABLE'}?`;
+            if (confirm(confirmMessage)) {
+                await updateQRStatus(selectedIds, isUsed);
+            }
+        }
+
+        async function updateSingleQR(qrId, isUsed) {
+            await updateQRStatus([qrId], isUsed);
+        }
+
+        async function updateQRStatus(qrIds, isUsed) {
+            try {
+                const response = await fetch('/api/ticket/update-qr-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        qrIds: qrIds,
+                        isUsed: isUsed
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Refresh the search results to show updated status
+                    searchByDigits();
+                    
+                    // Show success message
+                    const message = `Successfully updated ${data.data.updatedCount} QR code(s) to ${isUsed ? 'USED' : 'AVAILABLE'}`;
+                    
+                    // Temporary success notification
+                    const notification = document.createElement('div');
+                    notification.style.position = 'fixed';
+                    notification.style.top = '20px';
+                    notification.style.right = '20px';
+                    notification.style.zIndex = '1000';
+                    notification.style.background = '#28a745';
+                    notification.style.color = 'white';
+                    notification.style.padding = '15px';
+                    notification.style.borderRadius = '5px';
+                    notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                    notification.textContent = message;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 3000);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to update QR status'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating QR status');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -522,8 +522,15 @@ router.get('/phone/:phoneNumber', async (req, res) => {
 router.get('/search-digits/:digits', async (req, res) => {
     try {
         const { digits } = req.params;
+        const { ticketTypes } = req.query;
 
-      
+        // Parse ticket types from query parameter
+        let allowedTicketTypes = ['FAMILY', 'ONE_DAY']; // Default to both
+        if (ticketTypes) {
+            allowedTicketTypes = ticketTypes.split(',').map(type => type.trim());
+        }
+
+        console.log('Allowed ticket types:', allowedTicketTypes);
 
         const db = getTicketDB();
         const ticketsCollection = db.collection('tickets');
@@ -538,9 +545,19 @@ router.get('/search-digits/:digits', async (req, res) => {
         const ticketRegex = new RegExp(digits + '$');
         console.log("ticketRegex",ticketRegex)
         const initialTickets = await ticketsCollection.find({
-            $or: [
-            { ticketId: ticketRegex },
-            { paymentId: ticketRegex }
+            $and: [
+            {
+                $or: [
+                { ticketId: ticketRegex },
+                { paymentId: ticketRegex }
+                ]
+            },
+            { paymentStatus: { $ne: 'PENDING' } },
+            { 
+                ticketType: { 
+                    $in: allowedTicketTypes 
+                } 
+            }
             ]
         }).toArray();
 
@@ -561,9 +578,12 @@ router.get('/search-digits/:digits', async (req, res) => {
 
         console.log(paymentIds,"=================paymentIds==================");
 
-        // Fetch ALL tickets that have these payment IDs
+        // Fetch ALL tickets that have these payment IDs and match ticket type filter
         const allTicketsWithSamePayments = await ticketsCollection.find({
-            paymentId: { $in: paymentIds }
+            $and: [
+                { paymentId: { $in: paymentIds } },
+                { ticketType: { $in: allowedTicketTypes } }
+            ]
         }).toArray();
 
         // Combine with initial tickets and remove duplicates

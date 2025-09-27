@@ -522,6 +522,53 @@
                 max-height: 60px;
             }
         }
+        
+        /* Ticket Type Filter Styles */
+        .ticket-type-filter {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .filter-checkbox-label:hover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        
+        .filter-checkbox-label input[type="checkbox"]:checked + span {
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .filter-checkbox-label input[type="checkbox"]:checked {
+            accent-color: #007bff;
+        }
+        
+        @media (max-width: 768px) {
+            .ticket-type-filter {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .filter-checkbox-label {
+                justify-content: center;
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -531,16 +578,17 @@
         <!-- RFID Section -->
         <div class="form-section">
             <h2>🏷️ RFID Operations</h2>
+               <div class="input-group" style="margin-top: 20px;">
+                <label for="cardNo2">Card Number (Search):</label>
+                <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
+            </div>
             <div class="input-group">
                 <label for="cardNo1">Card Number (Process):</label>
                 <input type="text" id="cardNo1" placeholder="Enter Card Number to process (reverse status)">
             </div>
             <button onclick="processRFID()">Reverse RFID Status</button>
             
-            <div class="input-group" style="margin-top: 20px;">
-                <label for="cardNo2">Card Number (Search):</label>
-                <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
-            </div>
+         
             <button onclick="searchRFID()" class="search-btn">Search RFID</button>
             
             <div id="rfidResponse" class="response"></div>
@@ -552,11 +600,24 @@
         <!-- QR Status Management Section -->
         <div class="form-section">
             <h2>⚙️ QR Status Management</h2>
-            <p>Search by last 5 digits of Ticket ID or Payment ID to manage today's QR codes</p>
             
             <div class="input-group">
                 <label for="searchDigits">Last 5 Digits:</label>
                 <input type="text" id="searchDigits" placeholder="Enter last 5 digits">
+            </div>
+
+            <div class="input-group">
+                <label>🎫 Ticket Type Filter:</label>
+                <div class="ticket-type-filter">
+                    <label class="filter-checkbox-label">
+                        <input type="checkbox" id="filterFamily" checked> 
+                        <span>👨‍👩‍👧‍👦 FAMILY</span>
+                    </label>
+                    <label class="filter-checkbox-label">
+                        <input type="checkbox" id="filterOneDay" checked> 
+                        <span>🎫 ONE_DAY</span>
+                    </label>
+                </div>
             </div>
             
             <button onclick="searchByDigits()" class="search-btn">Search QR Codes</button>
@@ -1180,11 +1241,27 @@
                 showResponse('qrManagementResults', 'Please enter last 5 digits', false);
                 return;
             }
+
+            // Get filter values
+            const filterFamily = document.getElementById('filterFamily').checked;
+            const filterOneDay = document.getElementById('filterOneDay').checked;
             
-         
+            if (!filterFamily && !filterOneDay) {
+                showResponse('qrManagementResults', 'Please select at least one ticket type filter', false);
+                return;
+            }
+
+            // Build query parameters
+            const ticketTypes = [];
+            if (filterFamily) ticketTypes.push('FAMILY');
+            if (filterOneDay) ticketTypes.push('ONE_DAY');
+            
+            const queryParams = new URLSearchParams({
+                ticketTypes: ticketTypes.join(',')
+            });
 
             try {
-                const response = await fetch(`/api/ticket/search-digits/${digits}`);
+                const response = await fetch(`/api/ticket/search-digits/${digits}?${queryParams}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -1204,8 +1281,6 @@
             let html = `
                 <div class="qr-management-container">
                     <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                        <strong>📊 Search Results for "${data.searchDigits}"</strong><br>
-                        📅 Date: ${data.searchDate}<br>
                         🎫 Total Tickets: ${data.totalTickets}<br>
                         🔳 Total QR Codes: ${data.totalQRCodes}
                     </div>

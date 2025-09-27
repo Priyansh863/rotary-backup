@@ -582,6 +582,8 @@
                 <label for="cardNo2">Card Number (Search):</label>
                 <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
             </div>
+            <button onclick="searchRFID()" class="search-btn">Search RFID</button>
+
             <div class="input-group">
                 <label for="cardNo1">Card Number (Process):</label>
                 <input type="text" id="cardNo1" placeholder="Enter Card Number to process (reverse status)">
@@ -589,7 +591,6 @@
             <button onclick="processRFID()">Reverse RFID Status</button>
             
          
-            <button onclick="searchRFID()" class="search-btn">Search RFID</button>
             
             <div id="rfidResponse" class="response"></div>
         </div>

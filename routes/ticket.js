@@ -167,6 +167,367 @@ router.post('/payment/update', async (req, res) => {
     }
 });
 
+// POST endpoint to validate and update QR code usage status
+router.post('/qr/validate', async (req, res) => {
+    try {
+        const { qrCode } = req.body;
+
+        if (!qrCode) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'QR code is required' 
+            });
+        }
+
+        const db = getTicketDB();
+        const qrCollection = db.collection('qrcodes');
+        const ticketsCollection = db.collection('tickets');
+
+        // Find the QR code in the database
+        const qrRecord = await qrCollection.findOne({ qrCode: qrCode });
+
+        console.log(qrRecord,"=================qrRecord==================",qrRecord.isUsed);
+
+        if (!qrRecord) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'QR code not found in database',
+                message: 'Invalid QR code'
+            });
+        }
+
+        // Get ticket information
+        const ticketInfo = await ticketsCollection.findOne({ _id: new ObjectId(qrRecord.ticketId) });
+
+        if (!ticketInfo) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Ticket not found for this QR code'
+            });
+        }
+
+        // Get payment ID from ticket
+        const paymentId = ticketInfo.paymentId;
+
+        if (!paymentId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'No payment ID found for this ticket'
+            });
+        }
+
+        // Find ALL tickets with the same payment ID
+        const allTicketsWithPayment = await ticketsCollection.find({ 
+            paymentId: paymentId 
+        }).toArray();
+
+        // Get all ticket IDs for these tickets
+        const allTicketIds = allTicketsWithPayment.map(ticket => new ObjectId(ticket._id));
+
+        // Calculate today's date range for filtering
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
+        // Get ALL QR codes for all these tickets created today only
+        const allQrCodes = await qrCollection.find({
+            ticketId: { $in: allTicketIds },
+            createdAt: {
+                $gte: todayStart,
+                $lte: todayEnd
+            }
+        }).toArray();
+
+        // Organize by ticket type and calculate counts
+        const familyPasses = allQrCodes.filter(qr => {
+            const ticket = allTicketsWithPayment.find(t => t._id.toString() === qr.ticketId.toString());
+            return ticket && ticket.ticketType === 'FAMILY';
+        });
+
+        const oneDayPasses = allQrCodes.filter(qr => {
+            const ticket = allTicketsWithPayment.find(t => t._id.toString() === qr.ticketId.toString());
+            return ticket && ticket.ticketType === 'ONE_DAY';
+        });
+
+        // Count active/inactive passes
+        const familyActive = familyPasses.filter(qr => qr.isUsed).length;
+        const familyInactive = familyPasses.filter(qr => !qr.isUsed).length;
+        const oneDayActive = oneDayPasses.filter(qr => qr.isUsed).length;
+        const oneDayInactive = oneDayPasses.filter(qr => !qr.isUsed).length;
+
+        const currentPassType = ticketInfo.ticketType;
+        const currentPassTypeDisplay = currentPassType === 'FAMILY' ? 'Family Pass' : 'One Day Pass';
+
+        // Check if current QR is already used
+        if (qrRecord.isUsed) {
+            return res.json({ 
+                success: false, 
+                error: 'QR code already used',
+                message: 'This QR code has already been scanned',
+                data: {
+                    qrCode: qrRecord.qrCode,
+                    isUsed: qrRecord.isUsed,
+                    usedAt: qrRecord.usedAt,
+                    ticketId: qrRecord.ticketId,
+                    paymentId: paymentId,
+                    currentPassType: currentPassType,
+                    currentPassTypeDisplay: currentPassTypeDisplay,
+                    passStats: {
+                        familyTotal: familyPasses.length,
+                        familyActive: familyActive,
+                        familyInactive: familyInactive,
+                        oneDayTotal: oneDayPasses.length,
+                        oneDayActive: oneDayActive,
+                        oneDayInactive: oneDayInactive
+                    },
+                    allPasses: {
+                        family: familyPasses.map(qr => ({
+                            qrCode: qr.qrCode,
+                            isUsed: qr.isUsed,
+                            usedAt: qr.usedAt,
+                            _id: qr._id.toString()
+                        })),
+                        oneDay: oneDayPasses.map(qr => ({
+                            qrCode: qr.qrCode,
+                            isUsed: qr.isUsed,
+                            usedAt: qr.usedAt,
+                            _id: qr._id.toString()
+                        }))
+                    }
+                }
+            });
+        }
+
+        // If only one pass exists, auto-activate it
+        const totalInactivePasses = familyInactive + oneDayInactive;
+        
+        if (totalInactivePasses === 1) {
+            // Auto-activate the single pass
+            const updateResult = await qrCollection.updateOne(
+                { qrCode: qrCode },
+                { 
+                    $set: { 
+                        isUsed: true,
+                        usedAt: new Date()
+                    }
+                }
+            );
+
+            if (updateResult.modifiedCount === 0) {
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to update QR code status' 
+                });
+            }
+
+            // Update counts after activation
+            const updatedFamilyActive = currentPassType === 'FAMILY' ? familyActive + 1 : familyActive;
+            const updatedOneDayActive = currentPassType === 'ONE_DAY' ? oneDayActive + 1 : oneDayActive;
+
+            res.json({ 
+                success: true, 
+                message: 'Single pass activated successfully',
+                autoActivated: true,
+                data: {
+                    qrCode: qrRecord.qrCode,
+                    isUsed: true,
+                    usedAt: new Date(),
+                    ticketId: qrRecord.ticketId,
+                    paymentId: paymentId,
+                    currentPassType: currentPassType,
+                    currentPassTypeDisplay: currentPassTypeDisplay,
+                    passStats: {
+                        familyTotal: familyPasses.length,
+                        familyActive: updatedFamilyActive,
+                        familyInactive: familyPasses.length - updatedFamilyActive,
+                        oneDayTotal: oneDayPasses.length,
+                        oneDayActive: updatedOneDayActive,
+                        oneDayInactive: oneDayPasses.length - updatedOneDayActive
+                    }
+                }
+            });
+        } else {
+            // Multiple passes available - return info for user selection
+            res.json({ 
+                success: true, 
+                message: 'Multiple passes available - user selection required',
+                requiresUserInput: true,
+                data: {
+                    qrCode: qrRecord.qrCode,
+                    isUsed: false,
+                    ticketId: qrRecord.ticketId,
+                    paymentId: paymentId,
+                    currentPassType: currentPassType,
+                    currentPassTypeDisplay: currentPassTypeDisplay,
+                    passStats: {
+                        familyTotal: familyPasses.length,
+                        familyActive: familyActive,
+                        familyInactive: familyInactive,
+                        oneDayTotal: oneDayPasses.length,
+                        oneDayActive: oneDayActive,
+                        oneDayInactive: oneDayInactive
+                    },
+                    allPasses: {
+                        family: familyPasses.map(qr => ({
+                            qrCode: qr.qrCode,
+                            isUsed: qr.isUsed,
+                            usedAt: qr.usedAt,
+                            _id: qr._id.toString()
+                        })),
+                        oneDay: oneDayPasses.map(qr => ({
+                            qrCode: qr.qrCode,
+                            isUsed: qr.isUsed,
+                            usedAt: qr.usedAt,
+                            _id: qr._id.toString()
+                        }))
+                    }
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('QR validation error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Internal server error' 
+        });
+    }
+});
+
+// POST endpoint to activate multiple passes by payment ID and pass type
+router.post('/qr/activate-passes', async (req, res) => {
+    try {
+        const { paymentId, passType, count } = req.body;
+
+        if (!paymentId || !passType || !count) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Payment ID, pass type, and count are required' 
+            });
+        }
+
+        if (!['FAMILY', 'ONE_DAY'].includes(passType)) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Pass type must be FAMILY or ONE_DAY' 
+            });
+        }
+
+        if (count <= 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Count must be greater than 0' 
+            });
+        }
+
+        const db = getTicketDB();
+        const qrCollection = db.collection('qrcodes');
+        const ticketsCollection = db.collection('tickets');
+
+        // Find all tickets with this payment ID
+        const allTickets = await ticketsCollection.find({ 
+            paymentId: paymentId 
+        }).toArray();
+
+        if (allTickets.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'No tickets found with this payment ID' 
+            });
+        }
+
+        // Filter tickets by pass type
+        const targetTickets = allTickets.filter(ticket => ticket.ticketType === passType);
+        const targetTicketIds = targetTickets.map(ticket => new ObjectId(ticket._id));
+
+        // Get unused QR codes for this pass type
+        const unusedQrCodes = await qrCollection.find({
+            ticketId: { $in: targetTicketIds },
+            isUsed: false
+        }).limit(count).toArray();
+
+        if (unusedQrCodes.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `No unused ${passType === 'FAMILY' ? 'Family' : 'One Day'} passes available` 
+            });
+        }
+
+        if (unusedQrCodes.length < count) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Only ${unusedQrCodes.length} unused ${passType === 'FAMILY' ? 'Family' : 'One Day'} passes available, but ${count} requested` 
+            });
+        }
+
+        // Update the specified number of passes
+        const qrIdsToUpdate = unusedQrCodes.slice(0, count).map(qr => qr._id);
+        
+        const updateResult = await qrCollection.updateMany(
+            { _id: { $in: qrIdsToUpdate } },
+            { 
+                $set: { 
+                    isUsed: true,
+                    usedAt: new Date()
+                }
+            }
+        );
+
+        // Get updated statistics
+        const allTicketIds = allTickets.map(ticket => new ObjectId(ticket._id));
+        const allQrCodes = await qrCollection.find({
+            ticketId: { $in: allTicketIds }
+        }).toArray();
+
+        // Calculate updated counts
+        const familyPasses = allQrCodes.filter(qr => {
+            const ticket = allTickets.find(t => t._id.toString() === qr.ticketId.toString());
+            return ticket && ticket.ticketType === 'FAMILY';
+        });
+
+        const oneDayPasses = allQrCodes.filter(qr => {
+            const ticket = allTickets.find(t => t._id.toString() === qr.ticketId.toString());
+            return ticket && ticket.ticketType === 'ONE_DAY';
+        });
+
+        const familyActive = familyPasses.filter(qr => qr.isUsed).length;
+        const familyInactive = familyPasses.filter(qr => !qr.isUsed).length;
+        const oneDayActive = oneDayPasses.filter(qr => qr.isUsed).length;
+        const oneDayInactive = oneDayPasses.filter(qr => !qr.isUsed).length;
+
+        res.json({ 
+            success: true, 
+            message: `${updateResult.modifiedCount} ${passType === 'FAMILY' ? 'Family' : 'One Day'} passes activated successfully`,
+            data: {
+                paymentId: paymentId,
+                activatedPassType: passType,
+                activatedCount: updateResult.modifiedCount,
+                requestedCount: count,
+                passStats: {
+                    familyTotal: familyPasses.length,
+                    familyActive: familyActive,
+                    familyInactive: familyInactive,
+                    oneDayTotal: oneDayPasses.length,
+                    oneDayActive: oneDayActive,
+                    oneDayInactive: oneDayInactive
+                },
+                activatedPasses: unusedQrCodes.slice(0, updateResult.modifiedCount).map(qr => ({
+                    qrCode: qr.qrCode,
+                    _id: qr._id.toString()
+                }))
+            }
+        });
+
+    } catch (error) {
+        console.error('Pass activation error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Internal server error' 
+        });
+    }
+});
+
 // GET endpoint to get all QR codes by ticket ID, payment ID, or phone number
 router.get('/qrcodes/:identifier', async (req, res) => {
     try {

@@ -840,102 +840,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>RFID & Ticket Management System</h1>
-        
-        <!-- RFID Section -->
-        <div class="form-section">
-            <h2>🏷️ RFID Operations</h2>
-               <div class="input-group" style="margin-top: 20px;">
-                <label for="cardNo2">Card Number (Search):</label>
-                <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
-            </div>
-            <button onclick="searchRFID()" class="search-btn">Search RFID</button>
 
-            <div class="input-group">
-                <label for="cardNo1">Card Number (Process):</label>
-                <input type="text" id="cardNo1" placeholder="Enter Card Number to process (reverse status)">
-            </div>
-            <button onclick="processRFID()">Reverse RFID Status</button>
-            
-         
-            
-            <div id="rfidResponse" class="response"></div>
-        </div>
-
-
-   
-
-        <!-- QR Status Management Section -->
-        <div class="form-section">
-            <h2>⚙️ QR Status Management</h2>
-            
-            <div class="input-group">
-                <label for="searchDigits">Last 5 Digits:</label>
-                <input type="text" id="searchDigits" placeholder="Enter last 5 digits">
-            </div>
-
-            <div class="input-group">
-                <label>🎫 Ticket Type Filter:</label>
-                <div class="ticket-type-filter">
-                    <label class="filter-checkbox-label">
-                        <input type="checkbox" id="filterFamily" checked> 
-                        <span>👨‍👩‍👧‍👦 FAMILY</span>
-                    </label>
-                    <label class="filter-checkbox-label">
-                        <input type="checkbox" id="filterOneDay" checked> 
-                        <span>🎫 ONE_DAY</span>
-                    </label>
-                </div>
-            </div>
-            
-            <button onclick="searchByDigits()" class="search-btn">Search QR Codes</button>
-            
-            <div id="qrManagementResults" class="response"></div>
-        </div>
-
-
-
-        <!-- Payment Section -->
-        <div class="form-section">
-            <h2>💳 Payment Operations</h2>
-            <div class="input-group">
-                <label for="ticketIdPayment">Ticket ID:</label>
-                <input type="text" id="ticketIdPayment" placeholder="Enter Ticket ID for payment update">
-            </div>
-            <div class="input-group">
-                <label for="paymentId1">Payment ID:</label>
-                <input type="text" id="paymentId1" placeholder="Enter Payment ID to set">
-            </div>
-            <button onclick="updatePayment()">Update Payment (Set to COMPLETED)</button>
-            
-            <div id="paymentResponse" class="response"></div>
-        </div>
-
-
-             <!-- QR Codes Section -->
-        <div class="form-section">
-            <h2>🔍 QR Code Details</h2>
-            
-            <!-- Search Options -->
-            <div class="input-group">
-                <label for="searchType">Search By:</label>
-                <select id="searchType" onchange="updatePlaceholder()">
-                    <option value="ticket">Ticket ID</option>
-                    <option value="payment">Payment ID</option>
-                    <option value="phone">Phone Number</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label for="searchInput">Search Value:</label>
-                <input type="text" id="searchInput" placeholder="Enter Ticket ID to view QR codes">
-            </div>
-            
-            <button onclick="searchQRCodes()" class="search-btn">Search QR Codes</button>
-            
-            <div id="qrResponse" class="response"></div>
-        </div>
 
         <!-- QR Code Scanner Section -->
         <div class="form-section qr-scanner-section">
@@ -1008,6 +913,105 @@
                 </div>
             </div>
         </div>
+    <div class="container">
+        <h1>RFID & Ticket Management System</h1>
+        
+        <!-- RFID Section -->
+        <div class="form-section">
+            <h2>🏷️ RFID Operations</h2>
+               <div class="input-group" style="margin-top: 20px;">
+                <label for="cardNo2">Card Number (Search):</label>
+                <input type="text" id="cardNo2" placeholder="Enter Card Number to search">
+            </div>
+            <button onclick="searchRFID()" class="search-btn">Search RFID</button>
+
+            <div class="input-group">
+                <label for="cardNo1">Card Number (Process):</label>
+                <input type="text" id="cardNo1" placeholder="Enter Card Number to process (reverse status)">
+            </div>
+            <button onclick="processRFID()">Reverse RFID Status</button>
+            
+         
+            
+            <div id="rfidResponse" class="response"></div>
+        </div>
+
+
+   
+
+        <!-- QR Status Management Section -->
+        <div class="form-section">
+            <h2>⚙️ QR Status Management</h2>
+            
+            <div class="input-group">
+                <label for="searchDigits">Last 5 Digits:</label>
+                <input type="text" id="searchDigits" placeholder="Enter last 5 digits">
+            </div>
+
+            <div class="input-group">
+                <label>🎫 Ticket Type Filter:</label>
+                <div class="ticket-type-filter">
+                    <label class="filter-checkbox-label">
+                        <input type="checkbox" id="filterFamily" checked> 
+                        <span>👨‍👩‍👧‍👦 FAMILY</span>
+                    </label>
+                    <label class="filter-checkbox-label">
+                        <input type="checkbox" id="filterOneDay" checked> 
+                        <span>🎫 ONE_DAY</span>
+                    </label>
+                </div>
+            </div>
+            
+            <button onclick="searchByDigits()" class="search-btn">Search QR Codes</button>
+            
+            <div id="qrManagementResults" class="response"></div>
+        </div>
+
+        
+
+
+
+        <!-- Payment Section -->
+        <div class="form-section">
+            <h2>💳 Payment Operations</h2>
+            <div class="input-group">
+                <label for="ticketIdPayment">Ticket ID:</label>
+                <input type="text" id="ticketIdPayment" placeholder="Enter Ticket ID for payment update">
+            </div>
+            <div class="input-group">
+                <label for="paymentId1">Payment ID:</label>
+                <input type="text" id="paymentId1" placeholder="Enter Payment ID to set">
+            </div>
+            <button onclick="updatePayment()">Update Payment (Set to COMPLETED)</button>
+            
+            <div id="paymentResponse" class="response"></div>
+        </div>
+
+
+             <!-- QR Codes Section -->
+        <div class="form-section">
+            <h2>🔍 QR Code Details</h2>
+            
+            <!-- Search Options -->
+            <div class="input-group">
+                <label for="searchType">Search By:</label>
+                <select id="searchType" onchange="updatePlaceholder()">
+                    <option value="ticket">Ticket ID</option>
+                    <option value="payment">Payment ID</option>
+                    <option value="phone">Phone Number</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="searchInput">Search Value:</label>
+                <input type="text" id="searchInput" placeholder="Enter Ticket ID to view QR codes">
+            </div>
+            
+            <button onclick="searchQRCodes()" class="search-btn">Search QR Codes</button>
+            
+            <div id="qrResponse" class="response"></div>
+        </div>
+
     </div>
 
     <script>

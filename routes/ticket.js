@@ -188,6 +188,14 @@ router.post('/qr/validate', async (req, res) => {
 
         console.log(qrRecord,"=================qrRecord==================",qrRecord.isUsed);
 
+        if(qrRecord.isUsed){
+            return res.json({
+                success: false,
+                error: 'QR code already used',
+                message: 'Invalid QR code'
+            });
+        }
+
         if (!qrRecord) {
             return res.status(404).json({ 
                 success: false, 
